@@ -7,3 +7,18 @@ RUN npm install -g pnpm
 
 USER node
 RUN mkdir -p ~/.pnpm-store && pnpm config set store-dir ~/.pnpm-store --global
+
+# Копируем package.json и lock-файлы
+COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY --chown=node:node packages ./packages
+
+# Устанавливаем зависимости
+RUN pnpm install --frozen-lockfile
+
+# ТЕПЕРЬ пересобираем sharp для musl
+RUN pnpm rebuild sharp --arch=x64 --platform=linux --libc=musl
+
+# Копируем остальные файлы проекта
+COPY --chown=node:node . .
+
+CMD ["pnpm", "start"]
